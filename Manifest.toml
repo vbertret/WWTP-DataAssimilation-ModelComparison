@@ -2,7 +2,7 @@
 
 julia_version = "1.11.3"
 manifest_format = "2.0"
-project_hash = "bb0c40a5b13623a258013e1176b5382291e4fe77"
+project_hash = "e255d6e6a6ca94af0658b0f140be658ef0827c44"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "fb97701c117c8162e84dfcf80215caa904aef44f"
@@ -2590,7 +2590,7 @@ version = "1.0.2"
 
 [[deps.StateSpaceIdentification]]
 deps = ["Distributions", "DocStringExtensions", "ForwardDiff", "LinearAlgebra", "NearestNeighbors", "Optimization", "OptimizationNLopt", "OptimizationOptimJL", "OptimizationOptimisers", "PDMats", "RecipesBase", "StaticArrays", "Statistics"]
-git-tree-sha1 = "14579bffc74bd4f174aaf649f24b8f84bd21714c"
+git-tree-sha1 = "08c378c7d0427c008a4205d28f55ff583968ba72"
 repo-rev = "main"
 repo-url = "https://github.com/Purecontrol/StateSpaceIdentification.jl.git"
 uuid = "16b3a121-3e40-4ec2-8fac-c5e544c5276f"
