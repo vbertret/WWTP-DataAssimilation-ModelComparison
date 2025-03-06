@@ -8,6 +8,11 @@ addprocs(16; exeflags=`--threads=1 --heap-size-hint=5G`);
 @everywhere include(srcdir("dataset.jl"))
 @everywhere include(srcdir("model.jl"))
 
+ # Fix Compatibility problems
+@everywhere import Base: convert
+@everywhere function Base.convert(::Type{StateSpaceIdentification.LLR}, input)
+    StateSpaceIdentification.LLR(input.index_analogs, input.analogs, input.successors, KDTree(input.analogs), input.ignored_nodes, input.k, input.lag_x, input.kernel)
+end
 
 using DataFrames
 using ArgParse

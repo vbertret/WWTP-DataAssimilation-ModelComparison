@@ -4,6 +4,11 @@ using DrWatson
 include(srcdir("dataset.jl"))
 include(srcdir("model.jl"))
 
+# Fix Compatibility problems
+import Base: convert
+function Base.convert(::Type{StateSpaceIdentification.LLR}, input)
+    StateSpaceIdentification.LLR(input.index_analogs, input.analogs, input.successors, KDTree(input.analogs), input.ignored_nodes, input.k, input.lag_x, input.kernel)
+end
 
 using DataFrames
 using ArgParse
@@ -31,6 +36,7 @@ function parse_commandline()
     return parse_args(s)
 end
 
+tasks_parameters = Dict("model"=>:nonparametric_black, "seed"=>1, "name_dataset"=>"S1", "dt_model"=>5)
 
 function test_plot_save_model(tasks_parameters)
 
