@@ -1,0 +1,11 @@
+services:
+  wwtp_data_assimilation_model_comparison:
+    build:
+      context: .
+    deploy:
+      resources:
+        limits:
+          memory: 300g
+    hostname: wwtp_data_assimilation_model_comparison
+    volumes:
+      - ".:/home/WWTP-DataAssimilation-ModelComparison"
