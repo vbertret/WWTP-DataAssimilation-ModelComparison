@@ -61,12 +61,16 @@ function test_plot_save_model(tasks_parameters)
     output_dict = Dict([i => j[1] for (i,j) in zip(names(res), eachcol(res))])
     output_dict["obs_var"] = dataset.obs_var
 
-    _ = StateSpaceIdentification.update!(model, y_train, E_train, U_train, positive=true, n_particles=300) 
+    if symbol_model ∈ [:linear_black, :linear_grey]
+        _ = update!(model, y_train, E_train, U_train)
+    else
+        _ = update!(model, y_train, E_train, U_train, positive=true, n_particles=300)
+    end
 
     n_test = size(y_test, 1)
     size_window = Int(ceil(1440/dt_model))
     size_1h = Int(ceil(60/dt_model))
-    y_test_nan = similar(y_test[1:size_window])
+    y_test_nan = similar(y_test[1:size_window, :])
     y_test_nan .= NaN
 
     n_X = model.system.n_X
@@ -84,7 +88,11 @@ function test_plot_save_model(tasks_parameters)
             @info "Evaluation : $(round((i/(n_test - size_window))*100, digits=2))% progress."
         end
 
-        filter_output_test = StateSpaceIdentification.filter(model, y_test_nan, E_test[i:(i+size_window-1), :], U_test[i:(i+size_window-1), :], positive=true, n_particles=300) 
+        if symbol_model ∈ [:linear_black, :linear_grey]
+            filter_output_test = filtering(model, y_test_nan, E_test[i:(i+size_window-1), :], U_test[i:(i+size_window-1), :]) 
+        else
+            filter_output_test = filtering(model, y_test_nan, E_test[i:(i+size_window-1), :], U_test[i:(i+size_window-1), :], positive=true, n_particles=300) 
+        end
 
         if symbol_model ∈ [:linear_black, :linear_grey]
             filtered_state_test = filter_output_test.filtered_state
@@ -93,13 +101,17 @@ function test_plot_save_model(tasks_parameters)
         end
 
         for j in 1:24
-            rmse_tab[i_tab, j, :] = StateSpaceIdentification.rmse(subsample_x_test[:, i:(i+size_1h*j-1)], filtered_state_test[1:(size_1h*j)])
-            ic_tab[i_tab, j, :] = StateSpaceIdentification.coverage_probability(subsample_x_test[:, i:(i+size_1h*j-1)], filtered_state_test[1:(size_1h*j)])
-            aw_tab[i_tab, j, :] = StateSpaceIdentification.average_width(filtered_state_test[1:(size_1h*j)])
+            rmse_tab[i_tab, j, :] = StateSpaceIdentification.rmse(subsample_x_test[:, (i+size_1h*(j-1)):(i+size_1h*j-1)], filtered_state_test[(1+size_1h*(j-1)):(size_1h*j)])
+            ic_tab[i_tab, j, :] = StateSpaceIdentification.coverage_probability(subsample_x_test[:, (i+size_1h*(j-1)):(i+size_1h*j-1)], filtered_state_test[(1+size_1h*(j-1)):(size_1h*j)])
+            aw_tab[i_tab, j, :] = StateSpaceIdentification.average_width(filtered_state_test[(1+size_1h*(j-1)):(size_1h*j)])
         end
 
         # Update model
-        _ = StateSpaceIdentification.update!(model, y_test[i:(i+dt_window-1), :], E_test[i:(i+dt_window-1), :], U_test[i:(i+dt_window-1), :], positive=true, n_particles=300) 
+        if symbol_model ∈ [:linear_black, :linear_grey]
+            _ = StateSpaceIdentification.update!(model, y_test[i:(i+dt_window-1), :], E_test[i:(i+dt_window-1), :], U_test[i:(i+dt_window-1), :]) 
+        else
+            _ = StateSpaceIdentification.update!(model, y_test[i:(i+dt_window-1), :], E_test[i:(i+dt_window-1), :], U_test[i:(i+dt_window-1), :], positive=true, n_particles=300) 
+        end
 
     end
     output_dict["rolling_rmse"] = mean(rmse_tab, dims=1)[1, :, :]
