@@ -1,4 +1,4 @@
-FROM julia:1.11.3
+FROM julia:1.11.4
 
 RUN apt-get update \
     && apt-get install -y openssh-server apt-transport-https ca-certificates git\

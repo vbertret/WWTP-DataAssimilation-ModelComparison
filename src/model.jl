@@ -131,13 +131,10 @@ end
 function get_nh4_timeseries_from_model(name::Symbol, complete_timeseries, observed_var)
     idx_nh4 = findall(x -> x == :nh4, observed_var)
     @match name begin
-        :white => @match_return TimeSeries{StateSpaceIdentification.ParticleSwarmState}(
-            complete_timeseries.n_t, 1, map(x -> x[4], complete_timeseries))
+        :white => @match_return TimeSeries(map(x -> x[4], complete_timeseries))
         :grey => @match_return complete_timeseries
-        :linear_black => @match_return TimeSeries{StateSpaceIdentification.GaussianStateStochasticProcess}(
-            complete_timeseries.n_t, 1, map(x -> x[idx_nh4], complete_timeseries))
-        :nonparametric_black => @match_return TimeSeries{StateSpaceIdentification.ParticleSwarmState}(
-            complete_timeseries.n_t, 1, map(x -> x[idx_nh4], complete_timeseries))
+        :linear_black => @match_return TimeSeries(map(x -> x[idx_nh4], complete_timeseries))
+        :nonparametric_black => @match_return TimeSeries(map(x -> x[idx_nh4], complete_timeseries))
         :linear_grey => @match_return complete_timeseries
         _ => throw(ArgumentError("Non available symbol. Model has to be in $available_models ."))
     end
@@ -257,38 +254,38 @@ function get_nonparametric_black_box_model(; dt_model::Int64 = 1, n_Y = 1, kwarg
         ind = hcat([x_scaled', repeat(hcat(exogenous)', n_particules)]...)'
 
         if u... > 0.5
-            return x + llrs[1](ind, t) #min.(llrs[1](ind, t), -0.01) # #
+            return x + llrs[1](ind, t)
         else
-            return x + llrs[2](ind, t) #max.(llrs[2](ind, t), 0.01) # #
+            return x + llrs[2](ind, t)
         end
     end
 
-    function update_M(idx, t_idx, X, E, U, llrs, μ, σ)
+    function callback_llrs(llrs, idx, t_idx, X, E, U, μ, σ)
         _, n_particules, n_X = size(X)
-
+    
         knn_data = transpose(hcat([
-            StateSpaceIdentification.scale(reshape(X[1:(end - 1), :, :], (:, n_X))', μ, σ)',
+            StateSpaceIdentification._scale(reshape(X[1:(end - 1), :, :], (:, n_X))', μ, σ)',
             E[idx, :]]...))
         succesors_data = reshape(X[2:end, :, :] - X[1:(end - 1), :, :], (:, n_X))
         ind_aeration_on = (U[1:(end - 1), :] .> 0.5)
-
+    
         knn_data_aeration_on = knn_data[:, repeat(ind_aeration_on[:, 1], n_particules)]
         knn_data_aeration_off = knn_data[:, repeat(.!ind_aeration_on[:, 1], n_particules)]
-
+    
         succesors_data_aeration_on = reshape(
             succesors_data[repeat(ind_aeration_on[:, 1], n_particules), :], (:, n_X))
         succesors_data_aeration_off = reshape(
             succesors_data[repeat(.!ind_aeration_on[:, 1], n_particules), :], (:, n_X))
-
-        llrs[1].index_analogs = t_idx[repeat(ind_aeration_on[:, 1], n_particules)[idx]]
-        llrs[1].analogs = knn_data_aeration_on
-        llrs[1].successors = succesors_data_aeration_on
-        llrs[1].tree = KDTree(knn_data_aeration_on)
-
-        llrs[2].index_analogs = t_idx[repeat(.!ind_aeration_on[:, 1], n_particules)[idx]]
-        llrs[2].analogs = knn_data_aeration_off
-        llrs[2].successors = succesors_data_aeration_off
-        llrs[2].tree = KDTree(knn_data_aeration_off)
+    
+        llrs[1].analog_times_in_days = t_idx[repeat(ind_aeration_on[:, 1], n_particules)[idx]]
+        llrs[1].analog_inputs = knn_data_aeration_on
+        llrs[1].analog_outputs = succesors_data_aeration_on'
+        llrs[1].neighbor_tree = KDTree(knn_data_aeration_on)
+    
+        llrs[2].analog_times_in_days = t_idx[repeat(.!ind_aeration_on[:, 1], n_particules)[idx]]
+        llrs[2].analog_inputs = knn_data_aeration_off
+        llrs[2].analog_outputs = succesors_data_aeration_off'
+        llrs[2].neighbor_tree = KDTree(knn_data_aeration_off)
     end
 
     ϵ = 10e-6
@@ -300,6 +297,6 @@ function get_nonparametric_black_box_model(; dt_model::Int64 = 1, n_Y = 1, kwarg
     # Define the system
     return GaussianNonParametricStateSpaceSystem{Float64}(
         M_t, H_t, R_t, Q_t, n_Y, n_Y, dt_model / (1440),
-        kwargs[:llrs], μ = kwargs[:μ], Σ = kwargs[:σ]),
-    update_M
+        kwargs[:llrs], μ = kwargs[:μ], σ = kwargs[:σ]),
+        callback_llrs
 end
