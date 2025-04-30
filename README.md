@@ -14,7 +14,7 @@ Further details, including the specific methodologies and full results, are pres
 physical to data driven models**  
 📚 *Authored by Victor BERTRET, Roman Le Goff Latimier and Valérie Monbet*  
 🗖️ *Submitted to Water Research*  
-🔗 [Link to paper (waiting)]
+🔗 [Link to paper](https://doi.org/10.1016/j.watres.2025.123673)
 
 ## Code Repository
 
